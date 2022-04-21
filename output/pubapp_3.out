@@ -1,4 +1,16 @@
 Traceback (most recent call last):
-  File "src/pubapp.py", line 1, in <module>
-    from src import pub
-ImportError: cannot import name 'pub' from 'src' (/home/copia-ml/Documents/GitHub/ml-document-pipeline/src/__init__.py)
+  File "pubapp.py", line 24, in <module>
+    main()
+  File "pubapp.py", line 18, in main
+    p.publish(ticker, data_point)
+  File "/home/copia-ml/Documents/GitHub/CS6381-FINAL/pub.py", line 19, in publish
+    if not self.k_utility.topic_exists(topic):
+  File "/home/copia-ml/Documents/GitHub/CS6381-FINAL/Utilities/kafka_helper.py", line 30, in topic_exists
+    consumer = KafkaConsumer(bootstrap_servers=f'{self.host_ip}:9092', group_id='test')
+  File "/home/copia-ml/.local/lib/python3.8/site-packages/kafka/consumer/group.py", line 356, in __init__
+    self._client = KafkaClient(metrics=self._metrics, **self.config)
+  File "/home/copia-ml/.local/lib/python3.8/site-packages/kafka/client_async.py", line 244, in __init__
+    self.config['api_version'] = self.check_version(timeout=check_timeout)
+  File "/home/copia-ml/.local/lib/python3.8/site-packages/kafka/client_async.py", line 900, in check_version
+    raise Errors.NoBrokersAvailable()
+kafka.errors.NoBrokersAvailable: NoBrokersAvailable

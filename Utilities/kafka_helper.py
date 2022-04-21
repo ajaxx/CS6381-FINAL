@@ -1,6 +1,7 @@
 import os
 from kafka import KafkaConsumer
 from kafka import KafkaProducer
+import kafka
 
 class Kafka:
 
@@ -23,3 +24,14 @@ class Kafka:
     def get_producer(self,) -> KafkaProducer:
         
         return KafkaProducer(bootstrap_servers=f'{self.host_ip}:9092')
+
+    def topic_exists(self, topic: str):
+
+        consumer = KafkaConsumer(bootstrap_servers=f'{self.host_ip}:9092', group_id='test')
+        server_topics = consumer.topics()
+
+        if topic in server_topics:
+            return True
+        
+        else:
+            return False

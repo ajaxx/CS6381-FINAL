@@ -23,7 +23,7 @@ class Alpaca:
 
         for asset in active_assets:
 
-            if os.path.exists(f'src/data/{asset.symbol}.csv'):
+            if os.path.exists(f'data/{asset.symbol}.csv'):
                 continue
 
             asset_list.append(asset.symbol)
@@ -32,7 +32,7 @@ class Alpaca:
 
     def get_ticket_data(self, ticker: str, value: str) -> list:
 
-        t_data = pd.read_csv(f'src/data/{ticker}.csv')
+        t_data = pd.read_csv(f'data/{ticker}.csv')
         return t_data[value].tolist()
         
 def download_historical(sym: str):
@@ -44,7 +44,7 @@ def download_historical(sym: str):
             print(f'{sym} is empty')
             return
 
-        sym_df.to_csv(f'src/data/{sym}.csv')
+        sym_df.to_csv(f'data/{sym}.csv')
 
 def download_all_historical():
 

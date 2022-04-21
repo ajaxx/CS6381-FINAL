@@ -1,5 +1,4 @@
-from src.Utilities import alpaca
-from src.Utilities import kafka_helper
+from Utilities import kafka_helper
 
 from kafka import KafkaProducer
 
@@ -17,6 +16,10 @@ class Pub:
     
     def publish(self, topic: str, data: str):
         
-        self.producer.send(topic, data)
+        if not self.k_utility.topic_exists(topic):
+            self.k_utility.create_topic(topic, 1, 1)
+
+        print(f"publishing {data} to {topic}")
+        self.producer.send(topic, str.encode(str(data)))
 
     

@@ -26,10 +26,11 @@ class Servers:
         os.system('sudo rm -rf output/*')
 
         os.system('sudo nohup kafka/bin/zookeeper-server-start.sh kafka/config/zookeeper.properties > output/z.txt &')
-        sleep(5)
+        sleep(20)
         os.system('sudo nohup kafka/bin/kafka-server-start.sh kafka/config/server.properties > output/k.txt &')
 
-        os.system('sudo kafka/bin/kafka-del-topics.sh')
+        #os.system('sudo kafka/bin/kafka-del-topics.sh')
+        sleep(10)
 
 def main():
     servers = Servers()

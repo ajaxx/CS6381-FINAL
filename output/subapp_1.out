@@ -1,4 +1,108 @@
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
+waiting for topic to be created
 Traceback (most recent call last):
-  File "src/subapp.py", line 1, in <module>
-    from src import sub
-ImportError: cannot import name 'sub' from 'src' (/home/copia-ml/Documents/GitHub/ml-document-pipeline/src/__init__.py)
+  File "subapp.py", line 19, in <module>
+    main()
+  File "subapp.py", line 12, in main
+    s = sub.Sub(ticker)
+  File "/home/copia-ml/Documents/GitHub/CS6381-FINAL/sub.py", line 18, in __init__
+    self.wait_for_topic_creation()
+  File "/home/copia-ml/Documents/GitHub/CS6381-FINAL/sub.py", line 26, in wait_for_topic_creation
+    if self.k_utility.topic_exists(self.topic):
+  File "/home/copia-ml/Documents/GitHub/CS6381-FINAL/Utilities/kafka_helper.py", line 30, in topic_exists
+    consumer = KafkaConsumer(bootstrap_servers=f'{self.host_ip}:9092', group_id='test')
+  File "/home/copia-ml/.local/lib/python3.8/site-packages/kafka/consumer/group.py", line 356, in __init__
+    self._client = KafkaClient(metrics=self._metrics, **self.config)
+  File "/home/copia-ml/.local/lib/python3.8/site-packages/kafka/client_async.py", line 244, in __init__
+    self.config['api_version'] = self.check_version(timeout=check_timeout)
+  File "/home/copia-ml/.local/lib/python3.8/site-packages/kafka/client_async.py", line 900, in check_version
+    raise Errors.NoBrokersAvailable()
+kafka.errors.NoBrokersAvailable: NoBrokersAvailable

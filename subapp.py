@@ -1,5 +1,5 @@
-from src import sub
-from src.Utilities import alpaca
+import sub
+from Utilities import alpaca
 
 import sys
 from time import sleep
