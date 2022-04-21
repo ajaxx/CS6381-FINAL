@@ -25,15 +25,16 @@ class Alpaca:
 
             if os.path.exists(f'src/data/{asset.symbol}.csv'):
                 continue
-            
+
             asset_list.append(asset.symbol)
         
         return asset_list
 
-    def get_ticket_data(self, ticker: str) -> list:
+    def get_ticket_data(self, ticker: str, value: str) -> list:
 
         t_data = pd.read_csv(f'src/data/{ticker}.csv')
-
+        return t_data[value].tolist()
+        
 def download_historical(sym: str):
 
         api = REST()
