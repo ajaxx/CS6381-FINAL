@@ -16,3 +16,8 @@ class Sub:
 
         self.k_utility = kafka_helper.Kafka('10.0.0.1', '2181')
         self.consumer = self.k_utility.get_consumer(self.topic)
+
+    def recieve(self):
+
+        for message in self.consumer:
+            print(message)

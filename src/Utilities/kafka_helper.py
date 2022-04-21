@@ -20,6 +20,6 @@ class Kafka:
 
         return KafkaConsumer(topic_name, bootstrap_servers=f'{self.host_ip}:9092', group_id='test')
     
-    def get_producer(self, topic_name: str) -> KafkaProducer:
+    def get_producer(self,) -> KafkaProducer:
         
         return KafkaProducer(bootstrap_servers=f'{self.host_ip}:9092')

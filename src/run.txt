@@ -1,1 +1,0 @@
-h1 rm output/*; python3 servers.py

@@ -1,8 +1,24 @@
 from src import pub
+from src.Utilities import alpaca
 
+import sys
+from time import sleep
 
 def main():
-    pass
+    
+    ticker = sys.argv[1]
+    data_type = sys.argv[2]
+
+    a = alpaca.Alpaca()
+    p = pub.Pub(ticker)
+
+    data = a.get_ticket_data(ticker, data_type)
+
+    for data_point in data:
+        p.publish(data_point)
+        sleep(1)
+
+
 
 if __name__ == '__main__':
     main()
