@@ -22,17 +22,30 @@ class Alpaca:
         asset_list = []
 
         for asset in active_assets:
+
+            if os.path.exists(f'src/data/{asset.symbol}.csv'):
+                continue
+            
             asset_list.append(asset.symbol)
         
         return asset_list
+
+    def get_ticket_data(self, ticker: str) -> list:
+
+        t_data = pd.read_csv(f'src/data/{ticker}.csv')
 
 def download_historical(sym: str):
 
         api = REST()
         sym_df = api.get_bars(sym, TimeFrame.Minute, "2021-04-20", "2022-04-20", adjustment='raw').df
+
+        if sym_df.empty:
+            print(f'{sym} is empty')
+            return
+
         sym_df.to_csv(f'src/data/{sym}.csv')
 
-def main():
+def download_all_historical():
 
     alpaca = Alpaca()
     
@@ -44,6 +57,10 @@ def main():
     
     pool.close()
     pool.join()
+
+def main():
+    
+    download_all_historical()
 
 if __name__ == '__main__':
     main()
