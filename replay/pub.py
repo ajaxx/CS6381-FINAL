@@ -9,9 +9,8 @@ class Pub:
 
     topic: str
 
-    def __init__(self):
-        
-        self.k_utility = kafka_helper.Kafka('10.0.0.1', '2181')
+    def __init__(self, zookeeper_host: str = '127.0.0.1', zookeeper_port: int = 2181):
+        self.k_utility = kafka_helper.Kafka(zookeeper_host, str(zookeeper_port))
         self.producer = self.k_utility.get_producer()
     
     def publish(self, topic: str, data: str):

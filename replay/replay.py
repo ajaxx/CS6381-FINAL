@@ -1,6 +1,8 @@
 import argparse
 import csv
 import json
+import os
+import os.path
 
 from kafka import KafkaProducer, KafkaAdminClient
 from kafka.admin import NewTopic
@@ -51,7 +53,6 @@ def parseCmdLineArgs ():
     # zookeeper
     parser.add_argument ('-b', '--bootstrap-server', dest='bootstrap_server', type=str, default='localhost:9092', help='Kafka bootstrap server')
     # replay feed information
-    parser.add_argument ('-s', '--symbol', dest='symbol', type=str, default=None, required = True, help='Security symbol')
     parser.add_argument ('-f', '--file', dest='filename', type=str, default=None, required = True, help='Input filename')
     parser.add_argument ('-i', '--interval', dest='interval', type=float, default=1.0, required = False, help='Sleep Interval')
 
@@ -66,14 +67,15 @@ def stream_csv_data(filename):
 def main():
     args = parseCmdLineArgs()
 
-    symbol = args.symbol
-    symbol_topic = f'OHLC.{symbol}'
-
     # create the publisher
     publisher = Publisher(args.bootstrap_server)
 
     # stream the replay data
     if args.filename.endswith('csv'):
+        symbol = os.path.basename(args.filename)[0:-4]
+        symbol_topic = f'OHLC.{symbol}'
+        print(f'Starting stream for {symbol_topic}')
+
         # csv streamer
         for record in stream_csv_data(args.filename):
             # records should have inherent timing in them to tell how long to sleep between records,
