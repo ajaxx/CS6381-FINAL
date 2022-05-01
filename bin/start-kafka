@@ -1,0 +1,8 @@
+#!/bin/bash
+
+bindir=$(cd $(dirname $0); pwd)
+appdir=$(cd "${bindir}/.."; pwd)
+
+cd ${appdir}
+
+exec ./kafka/bin/kafka-server-start.sh ./kafka/config/server.properties
