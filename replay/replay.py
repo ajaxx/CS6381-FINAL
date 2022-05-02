@@ -5,6 +5,7 @@ import csv
 import json
 import os
 import os.path
+import time
 
 from kafka import KafkaProducer, KafkaAdminClient
 from kafka.admin import NewTopic
@@ -36,7 +37,6 @@ class Publisher:
 
     def publish(self, topic: str, data: dict):
         if topic not in self.topic_cache:
-            print(f'creating topic {topic}')
             self.create_topic(topic)
         
         # serialize the data to json
@@ -44,7 +44,7 @@ class Publisher:
         # encode the data as utf-8
         data = data.encode('utf-8')
 
-        print(f"publishing {data} to {topic}")
+        #print(f"publishing {data} to {topic}")
         self.producer.send(topic, data)
 
 # Parses command line arguments
@@ -66,7 +66,8 @@ def stream_csv_data(filename: str, symbol: str):
     with open(filename, 'r') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
-            row['symbol'] = symbol
+            row['__symbol__'] = symbol
+            row['__mtime__'] = int(time.time_ns() / 1000.00) # microsecond time
             yield row
 
 def main():
@@ -87,7 +88,7 @@ def main():
         elif args.topic_mapping == 'double':
             symbol_topic = f'OHLC.{symbol[0:2]}'
 
-        print(f'Starting stream for {symbol_topic}')
+        print(f'Starting stream for {symbol} => {symbol_topic}')
 
         # csv streamer
         for record in stream_csv_data(args.filename, symbol):
