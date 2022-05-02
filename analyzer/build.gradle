@@ -1,0 +1,38 @@
+plugins {
+    id 'java'
+}
+
+group 'edu.vanderbilt.cs6381'
+version '1.0-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+dependencies {
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.2.2'
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.13.2'
+    // https://mvnrepository.com/artifact/org.apache.flink/flink-core
+    compileOnly group: 'org.apache.flink', name: 'flink-core', version: '1.15.0'
+    // https://mvnrepository.com/artifact/org.apache.flink/flink-connector-kafka
+    implementation group: 'org.apache.flink', name: 'flink-connector-kafka', version: '1.15.0'
+    // https://mvnrepository.com/artifact/org.apache.flink/flink-streaming-java
+    implementation group: 'org.apache.flink', name: 'flink-streaming-java', version: '1.15.0'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+}
+
+test {
+    useJUnitPlatform()
+}
