@@ -58,12 +58,15 @@ def parseCmdLineArgs ():
     parser.add_argument ('-f', '--file', dest='filename', type=str, default=None, required = True, help='Input filename')
     parser.add_argument ('-i', '--interval', dest='interval', type=float, default=1.0, required = False, help='Sleep Interval')
 
+    parser.add_argument ('-t', '--topic', dest='topic_mapping', choices = ['full', 'single', 'double'], default='single', help='Topic mapping strategy')
+
     return parser.parse_args()
 
-def stream_csv_data(filename):
+def stream_csv_data(filename: str, symbol: str):
     with open(filename, 'r') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
+            row['symbol'] = symbol
             yield row
 
 def main():
@@ -75,11 +78,19 @@ def main():
     # stream the replay data
     if args.filename.endswith('csv'):
         symbol = os.path.basename(args.filename)[0:-4]
-        symbol_topic = f'OHLC.{symbol}'
+
+        # determine the topic for the symbol
+        if args.topic_mapping == 'full':
+            symbol_topic = f'OHLC.{symbol}'
+        elif args.topic_mapping == 'single':
+            symbol_topic = f'OHLC.{symbol[0]}'
+        elif args.topic_mapping == 'double':
+            symbol_topic = f'OHLC.{symbol[0:2]}'
+
         print(f'Starting stream for {symbol_topic}')
 
         # csv streamer
-        for record in stream_csv_data(args.filename):
+        for record in stream_csv_data(args.filename, symbol):
             # records should have inherent timing in them to tell how long to sleep between records,
             # but at this juncture there is nothing, so we basically just stream at a rate that
             # make sense to us
