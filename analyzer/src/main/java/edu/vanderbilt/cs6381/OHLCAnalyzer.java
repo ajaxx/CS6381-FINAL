@@ -28,7 +28,7 @@ public class OHLCAnalyzer {
         // create the consumer - this is where the events will come from and
         // will nominally be injected into the stream
         KafkaSource<ObjectNode> kafkaSource = KafkaSource.<ObjectNode>builder()
-                .setBootstrapServers("localhost:9202")
+                .setBootstrapServers("localhost:9092")
                 .setTopicPattern(Pattern.compile("OHLC\\..*"))
                 .setGroupId("data-analyzer")
                 .setStartingOffsets(OffsetsInitializer.earliest())
