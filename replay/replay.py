@@ -59,6 +59,7 @@ def parseCmdLineArgs ():
     parser.add_argument ('-i', '--interval', dest='interval', type=float, default=1.0, required = False, help='Sleep Interval')
 
     parser.add_argument ('-t', '--topic', dest='topic_mapping', choices = ['full', 'single', 'double'], default='single', help='Topic mapping strategy')
+    parser.add_argument ('--stats', dest='stats', action='store_true', default=False, help='Output execution statistics')
 
     return parser.parse_args()
 
@@ -76,6 +77,14 @@ def main():
     # create the publisher
     publisher = Publisher(args.bootstrap_server)
 
+    capture_statistics = args.stats
+
+    stats_start_time = int(time.time_ns() / 1000)
+    stats_records = 0
+
+    symbol = None
+    symbol_topic = None
+
     # stream the replay data
     if args.filename.endswith('csv'):
         symbol = os.path.basename(args.filename)[0:-4]
@@ -88,7 +97,8 @@ def main():
         elif args.topic_mapping == 'double':
             symbol_topic = f'OHLC.{symbol[0:2]}'
 
-        print(f'Starting stream for {symbol} => {symbol_topic}')
+        if not args.stats:
+            print(f'Starting stream for {symbol} => {symbol_topic}')
 
         # csv streamer
         for record in stream_csv_data(args.filename, symbol):
@@ -96,7 +106,13 @@ def main():
             # but at this juncture there is nothing, so we basically just stream at a rate that
             # make sense to us
             publisher.publish(symbol_topic, record)
+            stats_records += 1
             sleep(args.interval)
+        
+    if args.stats:
+        stats_end_time = int(time.time_ns() / 1000)
+        stats_elapsed = stats_end_time - stats_start_time
+        print (f'{symbol},{symbol_topic},{stats_records},{stats_elapsed}')
 
 if __name__ == '__main__':
     main()

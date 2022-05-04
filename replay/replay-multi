@@ -3,4 +3,4 @@
 appdir=$(cd $(dirname $0); pwd)
 datadir=$(cd "${appdir}/../data"; pwd)
 
-find ${datadir} -name \*.csv -print | shuf | xargs -n1 -P4 time ./replay.py -i 0.0 --file
+find ${datadir} -name \*.csv -print | shuf | xargs -n1 -P4 ./replay.py --stats -i 0.0 --file

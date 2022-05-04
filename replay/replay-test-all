@@ -1,0 +1,10 @@
+#!/bin/bash
+
+for test in "single" "double" "full"
+do
+    for procs in 1 4 8
+    do
+	../kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic "OHLC.*" --delete
+	PARALLEL=${procs} TOPIC_MODEL=${test} ./replay-multi | tee "replay_results_${test}_${procs}.csv"
+    done
+done
