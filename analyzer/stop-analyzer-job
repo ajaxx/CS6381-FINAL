@@ -1,0 +1,15 @@
+#!/bin/bash
+
+appdir=$(cd $(dirname $0); pwd)
+
+cd ${appdir}
+
+if [[ ! -d /tmp/cs6381 ]]; then
+    mkdir /tmp/cs6381
+fi
+
+
+job_id=$(curl http://localhost:8081/jobs/ 2> /dev/null | jq -r '.jobs[0].id')
+if [[ ! -z "${job_id}" ]]; then
+    ../flink/bin/flink cancel "${job_id}"
+fi

@@ -1,12 +1,21 @@
 package edu.vanderbilt.cs6381;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.SimpleStringEncoder;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
+import org.apache.flink.connector.kafka.source.KafkaSourceBuilder;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,6 +35,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.Collector;
 
 public class OHLCAnalyzer {
+    private static final String CONST_ASCII_UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static ObjectMapper objectMapper = new ObjectMapper();
 
     private static OHLC convertToOHLC(final ObjectNode objectNode) {
@@ -44,11 +54,13 @@ public class OHLCAnalyzer {
         return null;
     }
 
-    public static Tuple2<OHLC, Long> calculateScalarLatency(
+    public static Tuple2<OHLC, Latency> calculateScalarLatency(
             final OHLC ohlc)
     {
-        final long microTime = System.nanoTime() / 1000;
-        final long latency = microTime - ohlc.getMtime();
+        final Instant current = Instant.now();
+        final Duration duration = Duration.between(Instant.EPOCH, current);
+        final long microTime = duration.getNano() / 1000L + duration.getSeconds() * 1000000L;
+        final Latency latency = new Latency(ohlc.getMtime(), microTime);
         return new Tuple2<>(ohlc, latency);
     }
 
@@ -56,7 +68,7 @@ public class OHLCAnalyzer {
             final String symbol,
             final TimeWindow window,
             final Iterable<OHLC> values,
-            final Collector<OHLC> out)
+            final Collector<OHLCAverage> out)
         throws Exception
     {
         double open = 0.0;
@@ -77,7 +89,8 @@ public class OHLCAnalyzer {
             count ++;
         }
 
-        OHLC result = values.iterator().next();
+        //OHLCAverage result = values.iterator().next();
+        OHLCAverage result = new OHLCAverage();
         result.setSymbol(symbol);
         result.setOpen(open / count);
         result.setHigh(high / count);
@@ -91,13 +104,13 @@ public class OHLCAnalyzer {
     private static void calculateAverageLatency(
             final String symbol,
             final TimeWindow window,
-            final Iterable<Tuple2<OHLC, Long>> values,
+            final Iterable<Tuple2<OHLC, Latency>> values,
             final Collector<Tuple2<String, Long>> out)
     {
         long latency = 0L;
         int count = 0;
-        for (Tuple2<OHLC, Long> value : values) {
-            latency += value.f1;
+        for (Tuple2<OHLC, Latency> value : values) {
+            latency += value.f1.getLatency();
             count++;
         }
 
@@ -105,15 +118,19 @@ public class OHLCAnalyzer {
     }
 
     private static void buildLatencyStatistics(
-            final SingleOutputStreamOperator<OHLC> dataSource)
+            final SingleOutputStreamOperator<OHLC> dataSource,
+            final String pipelinePath)
     {
+        String latencyPath = pipelinePath + "/latency";
+        String latencyRawPath = pipelinePath + "/latency-raw";
+
         // Create a stream that injects latency into each element
-        SingleOutputStreamOperator<Tuple2<OHLC, Long>> latencySource = dataSource
+        SingleOutputStreamOperator<Tuple2<OHLC, Latency>> latencySource = dataSource
                 .map(OHLCAnalyzer::calculateScalarLatency);
 
         // Write the raw latency numbers out
-        StreamingFileSink<Tuple2<OHLC, Long>> latencySink = StreamingFileSink
-                .forRowFormat(new Path("/tmp/cs6381/latency-raw"), new SimpleStringEncoder<Tuple2<OHLC, Long>>())
+        StreamingFileSink<Tuple2<OHLC, Latency>> latencySink = StreamingFileSink
+                .forRowFormat(new Path(latencyRawPath), new SimpleStringEncoder<Tuple2<OHLC, Latency>>())
                 .build();
 
         latencySource
@@ -129,23 +146,19 @@ public class OHLCAnalyzer {
                 .map(tuple -> tuple.f0 + "," + tuple.f1)
                 .name("csv(average(latency))")
                 .addSink(StreamingFileSink
-                        .forRowFormat(new Path("/tmp/cs6381/latency"), new SimpleStringEncoder<String>())
+                        .forRowFormat(new Path(latencyPath), new SimpleStringEncoder<String>())
                         .build());
     }
 
     private static void buildInfoStatistics(
-            final SingleOutputStreamOperator<OHLC> dataSource)
+            final SingleOutputStreamOperator<OHLC> dataSource,
+            final String pipelinePath)
     {
+        String averagePath = pipelinePath + "/ohlc-average";
+
         // Map the object node to the OHLC type
         KeyedStream<OHLC, String> dataSourceBySymbol = dataSource
                 .keyBy(ohlc -> ohlc.getSymbol());
-
-        // Write out a raw stream of the data
-        dataSourceBySymbol
-                .addSink(StreamingFileSink
-                        .forRowFormat(new Path("/tmp/cs6381/stream-debug"), new SimpleStringEncoder<OHLC>())
-                        .build())
-                .name("sink-debug");
 
         // we would like to transform this data, but in what ways would this be useful?
         // - we can create the moving average, macd, aroons, but they are based on a single value
@@ -156,27 +169,22 @@ public class OHLCAnalyzer {
                 //.window(TumblingEventTimeWindows.of(Time.hours(1)))
                 .apply(OHLCAnalyzer::calculateStatisticsForOHLC)
                 .name("average(OHLC)")
-                .map(OHLC::toCsvString)
+                .map(OHLCAverage::toCsvString)
                 .name("csv(average(OHLC))");
 
         statisticsSource
                 .addSink(StreamingFileSink
-                        .forRowFormat(new Path("/tmp/cs6381/ohlc-stats"), new SimpleStringEncoder<String>())
+                        .forRowFormat(new Path(averagePath), new SimpleStringEncoder<String>())
                         .build())
                 .name("stream-results");
     }
 
-    public static void main(String[] args) throws Exception {
-        final ParameterTool parameterTool = ParameterTool.fromArgs(args);
-
-        // See if a bootstrap server has been provided through command
-        // line arguments
-        String bootstrapServer = parameterTool.get("bootstrap-server");
-        if (bootstrapServer == null) {
-            bootstrapServer = "localhost:9092";
-        }
-
-        final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+    private static SingleOutputStreamOperator<OHLC> buildPipeline(
+            final StreamExecutionEnvironment env,
+            final String bootstrapServer,
+            final String rootPath,
+            final Pattern topicPattern,
+            final List<String> topics) throws IOException {
 
         // create the deserialization schema
         final KafkaRecordDeserializationSchema<ObjectNode> deserializationSchema = KafkaRecordDeserializationSchema
@@ -184,13 +192,20 @@ public class OHLCAnalyzer {
 
         // create the consumer - this is where the events will come from and
         // will nominally be injected into the stream
-        KafkaSource<ObjectNode> kafkaSource = KafkaSource.<ObjectNode>builder()
+        KafkaSourceBuilder<ObjectNode> kafkaSourceBuilder = KafkaSource.<ObjectNode>builder()
                 .setBootstrapServers(bootstrapServer)
-                .setTopicPattern(Pattern.compile("OHLC\\..*"))
                 .setGroupId("data-analyzer")
                 .setStartingOffsets(OffsetsInitializer.earliest())
-                .setDeserializer(deserializationSchema)
-                .build();
+                .setDeserializer(deserializationSchema);
+
+        String pipelinePath = rootPath;
+        if (topicPattern != null) {
+            kafkaSourceBuilder.setTopicPattern(topicPattern);
+        } else if (topics != null) {
+            kafkaSourceBuilder.setTopics(topics);
+        }
+
+        KafkaSource<ObjectNode> kafkaSource = kafkaSourceBuilder.build();
 
         WatermarkStrategy<OHLC> watermarkStrategy = WatermarkStrategy
                 .<OHLC>noWatermarks()
@@ -206,8 +221,56 @@ public class OHLCAnalyzer {
                 .filter(ohlc -> !Objects.isNull(ohlc))
                 .name("filter-null(OHLC)");
 
-        buildLatencyStatistics(rootDataSource);
-        buildInfoStatistics(rootDataSource);
+        buildLatencyStatistics(rootDataSource, pipelinePath);
+        buildInfoStatistics(rootDataSource, pipelinePath);
+
+        return rootDataSource;
+    }
+
+    public static void main(String[] args) throws Exception {
+        final ParameterTool parameterTool = ParameterTool.fromArgs(args);
+
+        // See if a bootstrap server has been provided through command
+        // line arguments
+        String bootstrapServer = parameterTool.get("bootstrap-server");
+        if (bootstrapServer == null) {
+            bootstrapServer = "localhost:9092";
+        }
+
+        final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+        final String rootPath = "/tmp/cs6381";
+
+        final String alphaSplit = parameterTool.get("alpha");
+        System.out.println("alphaSplit = " + alphaSplit);
+        if (alphaSplit != null) {
+            final String[] alphaSplitPartitions = {
+                    "ABCDEF",
+                    "GHIJKL",
+                    "MNOPQR",
+                    "STUVWX",
+                    "YZ"
+            };
+
+            int instance = 0;
+            for (String alphaPartition : alphaSplitPartitions) {
+                instance++;
+                List<String> topics = alphaPartition
+                        .chars()
+                        .mapToObj(c -> (char) c)
+                        .map(v -> "OHLC." + v)
+                        .collect(Collectors.toList());
+
+                java.nio.file.Path alphaPath = Paths.get(rootPath, String.valueOf(instance));
+                if (Files.notExists(alphaPath)) {
+                    Files.createDirectory(alphaPath);
+                }
+
+                buildPipeline(env, bootstrapServer, alphaPath.toString(), null, topics);
+            }
+        } else {
+            buildPipeline(env, bootstrapServer, rootPath, Pattern.compile("OHLC.*"), null);
+        }
 
         env.execute();
     }

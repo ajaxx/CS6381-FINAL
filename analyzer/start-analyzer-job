@@ -1,0 +1,11 @@
+#!/bin/bash
+
+appdir=$(cd $(dirname $0); pwd)
+
+cd ${appdir}
+
+if [[ ! -d /tmp/cs6381 ]]; then
+    mkdir /tmp/cs6381
+fi
+
+exec ../flink/bin/flink run -c edu.vanderbilt.cs6381.OHLCAnalyzer build/libs/analyzer-1.0-SNAPSHOT.jar $*
